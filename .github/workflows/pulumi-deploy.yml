@@ -1,0 +1,39 @@
+name: Pulumi Deploy
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to the main branch
+
+jobs:
+  pulumi-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Pulumi
+        uses: pulumi/actions@v3
+        with:
+          command: up
+        env:
+          # Set up Pulumi credentials
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          
+      - name: Configure AWS credentials  # Only required if deploying to AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: your_aws_region
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Pulumi Deployment
+        run: |
+          pulumi stack select your-pulumi-stack
+          pulumi config set imageName ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:latest
+          pulumi up --yes
