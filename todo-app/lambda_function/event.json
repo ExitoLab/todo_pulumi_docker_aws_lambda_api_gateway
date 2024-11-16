@@ -1,0 +1,45 @@
+{
+  "resource": "/health",
+  "path": "/health",
+  "httpMethod": "GET",
+  "headers": {
+      "Content-Type": "application/json"
+  },
+  "multiValueHeaders": {},
+  "queryStringParameters": {},
+  "multiValueQueryStringParameters": {},
+  "pathParameters": null,
+  "stageVariables": null,
+  "requestContext": {
+      "resourceId": "123456",
+      "resourcePath": "/health",
+      "httpMethod": "GET",
+      "extendedRequestId": "request-id",
+      "requestTime": "01/Jun/2023:12:00:00 +0000",
+      "path": "/health",
+      "accountId": "123456789012",
+      "protocol": "HTTP/1.1",
+      "stage": "test",
+      "domainPrefix": "testPrefix",
+      "requestTimeEpoch": 1609459200000,
+      "requestId": "cbb8dc9e-68d4-4676-b618-5c35d1c6c32a",
+      "identity": {
+          "cognitoIdentityPoolId": null,
+          "accountId": null,
+          "cognitoIdentityId": null,
+          "caller": null,
+          "sourceIp": "127.0.0.1",
+          "principalOrgId": null,
+          "accessKey": null,
+          "cognitoAuthenticationType": null,
+          "cognitoAuthenticationProvider": null,
+          "userArn": null,
+          "userAgent": "Custom User Agent String",
+          "user": null
+      },
+      "domainName": "test.example.com",
+      "apiId": "api-id"
+  },
+  "body": null,
+  "isBase64Encoded": false
+}
