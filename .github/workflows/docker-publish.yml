@@ -25,9 +25,8 @@ jobs:
       repository-projects: write
     
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: develop
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set ENV variables to get the repo name
         run: echo "REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
