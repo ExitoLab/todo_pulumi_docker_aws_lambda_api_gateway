@@ -79,8 +79,8 @@ jobs:
         uses: docker/build-push-action@v5
         id: build-push-to-ecr
         with:
-          context: .
-          file: todo-app/lambda_function/Dockerfile
+          context: todo-app/lambda_function
+          file: Dockerfile
           push: true
           tags: ${{ env.ECR_REGISTRY }}/${{ env.REPO_NAME }}:${{ steps.sha_short.outputs.sha_short }}
           platforms: linux/amd64,linux/arm64
