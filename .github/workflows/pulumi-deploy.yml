@@ -2,8 +2,10 @@ name: Pulumi Deploy
 
 on:
   push:
+    paths:
+      - 'todo-app/**'
     branches:
-      - main  # Trigger on push to the main branch
+      - main # Trigger on push to the main branch
 
 jobs:
   pulumi-deploy:
