@@ -8,7 +8,7 @@ import boto3
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
 from botocore.exceptions import ClientError
 
 # Configure logging
@@ -31,10 +31,11 @@ dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
 table = dynamodb.Table("todo-dev")
 
 class TodoItem(BaseModel):
-    id: Optional[str]  # Make 'id' optional
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))  # Generate a UUID if not provided
     text: str
     completed: bool
-    timestamp: Optional[int]  # Make 'timestamp' optional
+    timestamp: Optional[int] = Field(default_factory=lambda: int(datetime.utcnow().timestamp()))  # Current Unix timestamp if not provided
+
 
 @app.get("/todos", response_model=List[TodoItem])
 async def get_todos():
