@@ -37,7 +37,7 @@ jobs:
       - name: Configure Pulumi
         working-directory: todo-app
         run: |
-          pulumi stack select igeadetokunbo/todo-app/dev --non-interactive || pulumi stack init igeadetokunbo/todo-app/dev
+          pulumi stack select ExitoLab/todo-app/dev --non-interactive || pulumi stack init ExitoLab/todo-app/dev
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
