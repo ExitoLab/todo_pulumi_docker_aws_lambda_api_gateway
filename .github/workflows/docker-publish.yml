@@ -80,9 +80,9 @@ jobs:
         id: build-push-to-ecr
         with:
           context: todo-app/lambda_function
-          file: Dockerfile
+          file: todo-app/lambda_function/Dockerfile
           push: true
           tags: ${{ env.ECR_REGISTRY }}/${{ env.REPO_NAME }}:${{ steps.sha_short.outputs.sha_short }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           provenance: false
         continue-on-error: false

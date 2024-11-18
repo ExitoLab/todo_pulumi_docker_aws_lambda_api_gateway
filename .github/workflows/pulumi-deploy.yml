@@ -13,29 +13,38 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Pulumi
-        uses: pulumi/actions@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4 # More information on this action can be found below in the 'AWS Credentials' section
         with:
-          command: up
-        env:
-          # Set up Pulumi credentials
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          
-      - name: Configure AWS credentials  # Only required if deploying to AWS
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: your_aws_region
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-session-name: GithubActionsSession
 
       - name: Install Dependencies
+        working-directory: todo-app
         run: |
+          pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Pulumi Deployment
+      - name: Configure Pulumi
+        working-directory: todo-app
         run: |
-          pulumi stack select your-pulumi-stack
-          pulumi config set imageName ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:latest
-          pulumi up --yes
+          pulumi stack select igeadetokunbo/todo-app/dev --non-interactive || pulumi stack init igeadetokunbo/todo-app/dev
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+      - name: Pulumi Preview
+        working-directory: todo-app
+        run: |
+          pulumi preview --stack ExitoLab/todo-app/dev --yes --non-interactive
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+      - name: Pulumi Up
+        working-directory: todo-app
+        run: |
+          pulumi up --stack ExitoLab/todo-app/dev --yes --non-interactive
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
