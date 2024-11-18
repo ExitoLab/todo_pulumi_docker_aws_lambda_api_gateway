@@ -50,6 +50,6 @@ jobs:
       - name: Pulumi Up
         working-directory: todo-app
         run: |
-          pulumi up --stack ExitoLab/todo-app/dev --yes --non-interactive
+          pulumi up --stack ExitoLab/todo-app/dev --yes
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
