@@ -31,7 +31,6 @@ jobs:
       - name: Install Dependencies
         working-directory: todo-app
         run: |
-          pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Configure Pulumi
@@ -44,7 +43,7 @@ jobs:
       - name: Pulumi Preview
         working-directory: todo-app
         run: |
-          pulumi preview --stack ExitoLab/todo-app/dev --yes --non-interactive
+          pulumi stack select ExitoLab/todo-app/dev
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
