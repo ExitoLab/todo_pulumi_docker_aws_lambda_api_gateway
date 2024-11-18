@@ -69,28 +69,34 @@ async def create_todo(todo: TodoItem):
         raise HTTPException(status_code=500, detail="Error creating todo")
 
 @app.put("/todos/{id}", response_model=TodoItem)
-async def update_todo(id: str, todo: Dict[str, str]):
+async def update_todo(id: str, timestamp: int, todo: Dict[str, str]):
     if "text" not in todo:
         raise HTTPException(status_code=400, detail="Missing 'text' in request body")
+    
     try:
+        # Perform the update with both id and timestamp
         response = table.update_item(
-            Key={"id": id},
+            Key={"id": id, "timestamp": timestamp},  # Using both partition key and sort key
             UpdateExpression="SET #t = :t",
             ExpressionAttributeNames={"#t": "text"},
             ExpressionAttributeValues={":t": todo["text"]},
             ReturnValues="ALL_NEW"
         )
+        
         updated_todo = response.get("Attributes")
         if not updated_todo:
             raise HTTPException(status_code=404, detail="Todo not found")
+        
         logging.debug(f"Updated item: {updated_todo}")
         return updated_todo
+    
     except ClientError as e:
         logging.error(f"ClientError updating todo: {e}")
         raise HTTPException(status_code=500, detail="Error updating todo")
     except Exception as e:
         logging.error(f"Error updating todo: {e}")
         raise HTTPException(status_code=500, detail="Error updating todo")
+
 
 @app.delete("/todos/{id}", status_code=204)
 async def delete_todo(id: str, timestamp: int):
