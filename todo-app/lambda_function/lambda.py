@@ -93,19 +93,18 @@ async def update_todo(id: str, todo: Dict[str, str]):
         raise HTTPException(status_code=500, detail="Error updating todo")
 
 @app.delete("/todos/{id}", status_code=204)
-async def delete_todo(id: str):
+async def delete_todo(id: str, timestamp: int):
     try:
-        # Attempt to delete the item from DynamoDB
-        response = table.delete_item(Key={"id": id})
+        # Delete the todo item using both the id (partition key) and timestamp (sort key)
+        response = table.delete_item(Key={"id": id, "timestamp": timestamp})
 
-        # Check if the response contains an error or if the item was not found
+        # Check if the deletion was successful
         if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
             logging.warning(f"Delete operation failed for id {id}: {response}")
             raise HTTPException(status_code=404, detail="Todo not found")
         
-        # If item deletion is successful, log the action
-        logging.debug(f"Deleted item with id: {id}")
-        return {"detail": "Todo deleted successfully"}  # Explicit success message
+        logging.debug(f"Deleted item with id: {id} and timestamp: {timestamp}")
+        return {"detail": "Todo deleted successfully"}
 
     except ClientError as e:
         logging.error(f"ClientError deleting todo with id {id}: {e}")
@@ -114,6 +113,7 @@ async def delete_todo(id: str):
     except Exception as e:
         logging.error(f"Unexpected error deleting todo with id {id}: {e}")
         raise HTTPException(status_code=500, detail="Error deleting todo")
+
 
 @app.get("/health")
 async def health():
