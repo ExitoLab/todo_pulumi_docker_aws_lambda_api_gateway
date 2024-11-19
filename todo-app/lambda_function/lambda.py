@@ -71,25 +71,30 @@ class UpdateTodoRequest(BaseModel):
     text: str
     completed: bool = None  # Optional field
 
-# PUT endpoint to update a todo item
-@app.put("/todos/{id}", response_model=TodoItem)
+# PATCH endpoint to update a todo item
+@app.patch("/todos/{id}", response_model=TodoItem)
 async def update_todo(id: str, request: UpdateTodoRequest, timestamp: int = None):
     # Use the current timestamp if one is not provided
     timestamp = timestamp or int(time.time())
 
-    if not request.text:
-        raise HTTPException(status_code=400, detail="Missing 'text' in request body")
+    # Initialize the list of update expressions and expression attributes
+    update_expressions = []
+    expression_attribute_names = {}
+    expression_attribute_values = {}
 
-    # Prepare the update expressions
-    update_expressions = ["#t = :t"]
-    expression_attribute_names = {"#t": "text"}
-    expression_attribute_values = {":t": request.text}
+    # Only include fields that are present in the request
+    if request.text:
+        update_expressions.append("#t = :t")
+        expression_attribute_names["#t"] = "text"
+        expression_attribute_values[":t"] = request.text
 
-    # Add the `completed` field to the update if it's provided
     if request.completed is not None:
         update_expressions.append("#c = :c")
         expression_attribute_names["#c"] = "completed"
         expression_attribute_values[":c"] = request.completed
+
+    if not update_expressions:
+        raise HTTPException(status_code=400, detail="No fields provided to update")
 
     # Construct the UpdateExpression string
     update_expression = "SET " + ", ".join(update_expressions)
@@ -118,29 +123,32 @@ async def update_todo(id: str, request: UpdateTodoRequest, timestamp: int = None
         logging.error(f"Error updating todo: {e}")
         raise HTTPException(status_code=500, detail="Error updating todo")
 
+
 # Delete a todo item in the DynamoDB table (using only `id` as the partition key)
 @app.delete("/todos/{id}", status_code=204)
-async def delete_todo(id: str):
+async def delete_todo(id: str, timestamp: int = None):
     try:
-        # If the table uses only `id` as the partition key, we don't need a timestamp
-        response = table.delete_item(Key={"id": id})
+        # If timestamp is not provided, use the current timestamp
+        timestamp = timestamp or int(time.time())
+
+        # Attempt to delete the item using both the partition key (id) and sort key (timestamp)
+        response = table.delete_item(Key={"id": id, "timestamp": timestamp})
         
-        # Check if the deletion was successful by checking the response metadata
-        if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
-            logging.warning(f"Delete operation failed for id {id}: {response}")
+        # Check if the HTTP status code indicates a successful deletion
+        if "ResponseMetadata" not in response or response["ResponseMetadata"].get("HTTPStatusCode") != 200:
+            logging.warning(f"Delete operation failed for id {id} and timestamp {timestamp}: {response}")
             raise HTTPException(status_code=404, detail="Todo not found")
         
-        logging.debug(f"Deleted item with id: {id}")
-        
+        logging.debug(f"Deleted item with id: {id} and timestamp: {timestamp}")
         # Return nothing (status code 204)
         return {"detail": "Todo deleted successfully"}
 
     except ClientError as e:
-        logging.error(f"ClientError deleting todo with id {id}: {e}")
+        logging.error(f"ClientError deleting todo with id {id} and timestamp {timestamp}: {e}")
         raise HTTPException(status_code=500, detail=f"Error deleting todo: {str(e)}")
 
     except Exception as e:
-        logging.error(f"Unexpected error deleting todo with id {id}: {e}")
+        logging.error(f"Unexpected error deleting todo with id {id} and timestamp {timestamp}: {e}")
         raise HTTPException(status_code=500, detail="Error deleting todo")
 
 
