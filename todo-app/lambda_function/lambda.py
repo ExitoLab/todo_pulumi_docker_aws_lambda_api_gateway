@@ -124,7 +124,7 @@ async def update_todo(id: str, request: UpdateTodoRequest):
 
 
 # Delete a todo item in the DynamoDB table (using only `id` as the partition key)
-@app.delete("/todos/{id}", status_code=204)
+@app.delete("/todos/{id}", status_code=200)
 async def delete_todo(id: str):
     try:
         # Attempt to delete the item using only the partition key (`id`)
@@ -145,7 +145,6 @@ async def delete_todo(id: str):
     except Exception as e:
         logging.error(f"Unexpected error deleting todo with id {id}: {e}")
         raise HTTPException(status_code=500, detail="Error deleting todo")
-
 
 @app.get("/health")
 async def health():
