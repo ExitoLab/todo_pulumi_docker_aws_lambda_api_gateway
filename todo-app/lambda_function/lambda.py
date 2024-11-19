@@ -11,9 +11,6 @@ from mangum import Mangum
 from pydantic import BaseModel,Field
 from botocore.exceptions import ClientError
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-
 # Initialize FastAPI application
 app = FastAPI()
 
@@ -68,21 +65,24 @@ async def create_todo(todo: TodoItem):
         logging.error(f"Unexpected error creating todo: {e}")
         raise HTTPException(status_code=500, detail="Error creating todo")
 
+# Update a todo item in the DynamoDB table
 @app.put("/todos/{id}", response_model=TodoItem)
-async def update_todo(id: str, timestamp: int, todo: Dict[str, str]):
+async def update_todo(id: str, todo: Dict[str, str]):
+    # Check if the 'text' field is present in the request body
     if "text" not in todo:
         raise HTTPException(status_code=400, detail="Missing 'text' in request body")
     
     try:
-        # Perform the update with both id and timestamp
+        # Update the DynamoDB item using only the 'id' as the partition key
         response = table.update_item(
-            Key={"id": id, "timestamp": timestamp},  # Using both partition key and sort key
+            Key={"id": id},  # Using only the partition key 'id'
             UpdateExpression="SET #t = :t",
             ExpressionAttributeNames={"#t": "text"},
             ExpressionAttributeValues={":t": todo["text"]},
             ReturnValues="ALL_NEW"
         )
         
+        # Retrieve the updated item attributes
         updated_todo = response.get("Attributes")
         if not updated_todo:
             raise HTTPException(status_code=404, detail="Todo not found")
@@ -91,26 +91,28 @@ async def update_todo(id: str, timestamp: int, todo: Dict[str, str]):
         return updated_todo
     
     except ClientError as e:
-        logging.error(f"ClientError updating todo: {e}")
+        logging.error(f"ClientError updating todo: {e.response['Error']['Message']}")
         raise HTTPException(status_code=500, detail="Error updating todo")
     except Exception as e:
         logging.error(f"Error updating todo: {e}")
         raise HTTPException(status_code=500, detail="Error updating todo")
 
-
+# Delete a todo item in the DynamoDB table
 @app.delete("/todos/{id}", status_code=204)
 async def delete_todo(id: str, timestamp: int):
     try:
-        # Delete the todo item using both the id (partition key) and timestamp (sort key)
+        # Attempt to delete the item using both the partition key (id) and sort key (timestamp)
         response = table.delete_item(Key={"id": id, "timestamp": timestamp})
-
-        # Check if the deletion was successful
-        if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
+        
+        # Check if the HTTP status code indicates a successful deletion
+        status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+        if status_code != 200:
             logging.warning(f"Delete operation failed for id {id}: {response}")
             raise HTTPException(status_code=404, detail="Todo not found")
         
         logging.debug(f"Deleted item with id: {id} and timestamp: {timestamp}")
-        return {"detail": "Todo deleted successfully"}
+        # Return nothing (status code 204)
+        return
 
     except ClientError as e:
         logging.error(f"ClientError deleting todo with id {id}: {e}")
