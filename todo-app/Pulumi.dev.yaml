@@ -1,4 +1,4 @@
 config:
-  todo-app:docker_image: 289940214902.dkr.ecr.us-east-1.amazonaws.com/todo_pulumi_docker_aws_lambda_api_gateway:41bc231
+  todo-app:docker_image: 289940214902.dkr.ecr.us-east-1.amazonaws.com/todo_pulumi_docker_aws_lambda_api_gateway:0146842
   todo-app:environment: dev
   todo-app:region: us-east-1
