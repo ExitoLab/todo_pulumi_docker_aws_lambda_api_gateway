@@ -66,19 +66,16 @@ async def create_todo(todo: TodoItem):
         logging.error(f"Unexpected error creating todo: {e}")
         raise HTTPException(status_code=500, detail="Error creating todo")
 
-# Define a Pydantic model for the update request body
+# Define the request body model for updating a todo item
 class UpdateTodoRequest(BaseModel):
     text: str
-    completed: Optional[bool] = None  # Include the `completed` field
-    timestamp: Optional[int] = None  # Make `timestamp` optional
+    completed: bool = None  # Optional field
 
 # PUT endpoint to update a todo item
 @app.put("/todos/{id}", response_model=TodoItem)
-async def update_todo(id: str, request: UpdateTodoRequest):
-    # Ensure you are using the correct timestamp
-    timestamp = request.timestamp
-    if not timestamp:
-        raise HTTPException(status_code=400, detail="Missing 'timestamp' for identifying the item to update.")
+async def update_todo(id: str, request: UpdateTodoRequest, timestamp: int = None):
+    # Use the current timestamp if one is not provided
+    timestamp = timestamp or int(time.time())
 
     if not request.text:
         raise HTTPException(status_code=400, detail="Missing 'text' in request body")
@@ -98,13 +95,12 @@ async def update_todo(id: str, request: UpdateTodoRequest):
     update_expression = "SET " + ", ".join(update_expressions)
 
     try:
-        # Use a ConditionExpression to ensure the item exists before updating
+        # Update the item in the DynamoDB table
         response = table.update_item(
-            Key={"id": id, "timestamp": timestamp},
+            Key={"id": id, "timestamp": timestamp},  # Use `id` and `timestamp` to identify the item
             UpdateExpression=update_expression,
             ExpressionAttributeNames=expression_attribute_names,
             ExpressionAttributeValues=expression_attribute_values,
-            ConditionExpression="attribute_exists(id) AND attribute_exists(timestamp)",
             ReturnValues="ALL_NEW"
         )
 
@@ -116,29 +112,27 @@ async def update_todo(id: str, request: UpdateTodoRequest):
         return updated_todo
 
     except ClientError as e:
-        if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
-            raise HTTPException(status_code=404, detail="Todo not found")
         logging.error(f"ClientError updating todo: {e}")
         raise HTTPException(status_code=500, detail="Error updating todo")
     except Exception as e:
         logging.error(f"Error updating todo: {e}")
         raise HTTPException(status_code=500, detail="Error updating todo")
 
-# Delete a todo item in the DynamoDB table
+# Delete a todo item in the DynamoDB table (using only `id` as the partition key)
 @app.delete("/todos/{id}", status_code=204)
-async def delete_todo(id: str, timestamp: int):
+async def delete_todo(id: str):
     try:
-        # Attempt to delete the item using both the partition key (id) and sort key (timestamp)
-        response = table.delete_item(Key={"id": id, "timestamp": timestamp})
+        # If the table uses only `id` as the partition key, we don't need a timestamp
+        response = table.delete_item(Key={"id": id})
         
         # Check if the deletion was successful by checking the response metadata
         if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
             logging.warning(f"Delete operation failed for id {id}: {response}")
             raise HTTPException(status_code=404, detail="Todo not found")
         
-        logging.debug(f"Deleted item with id: {id} and timestamp: {timestamp}")
+        logging.debug(f"Deleted item with id: {id}")
         
-        # No content needs to be returned for status code 204, just confirm the deletion was successful
+        # Return nothing (status code 204)
         return {"detail": "Todo deleted successfully"}
 
     except ClientError as e:
@@ -148,6 +142,7 @@ async def delete_todo(id: str, timestamp: int):
     except Exception as e:
         logging.error(f"Unexpected error deleting todo with id {id}: {e}")
         raise HTTPException(status_code=500, detail="Error deleting todo")
+
 
 @app.get("/health")
 async def health():
