@@ -30,7 +30,7 @@ table = dynamodb.Table("todo-dev")
 class TodoItem(BaseModel):
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))  # Generate a UUID if not provided
     text: str
-    completed: bool
+    completed: bool  # Use `bool` for the `completed` field
     timestamp: Optional[int] = Field(default_factory=lambda: int(datetime.utcnow().timestamp()))  # Current Unix timestamp if not provided
 
 
@@ -65,24 +65,25 @@ async def create_todo(todo: TodoItem):
         logging.error(f"Unexpected error creating todo: {e}")
         raise HTTPException(status_code=500, detail="Error creating todo")
 
-# Update a todo item in the DynamoDB table
+# PUT endpoint to update a todo item
 @app.put("/todos/{id}", response_model=TodoItem)
-async def update_todo(id: str, todo: Dict[str, str]):
-    # Check if the 'text' field is present in the request body
-    if "text" not in todo:
-        raise HTTPException(status_code=400, detail="Missing 'text' in request body")
-    
+async def update_todo(id: str, timestamp: int, todo: TodoItem):
     try:
-        # Update the DynamoDB item using only the 'id' as the partition key
+        # Update the item in DynamoDB using both the id and timestamp as keys
         response = table.update_item(
-            Key={"id": id},  # Using only the partition key 'id'
-            UpdateExpression="SET #t = :t",
-            ExpressionAttributeNames={"#t": "text"},
-            ExpressionAttributeValues={":t": todo["text"]},
+            Key={"id": id, "timestamp": timestamp},
+            UpdateExpression="SET #t = :t, #c = :c",
+            ExpressionAttributeNames={
+                "#t": "text",
+                "#c": "completed"
+            },
+            ExpressionAttributeValues={
+                ":t": todo.text,
+                ":c": todo.completed
+            },
             ReturnValues="ALL_NEW"
         )
         
-        # Retrieve the updated item attributes
         updated_todo = response.get("Attributes")
         if not updated_todo:
             raise HTTPException(status_code=404, detail="Todo not found")
@@ -91,7 +92,7 @@ async def update_todo(id: str, todo: Dict[str, str]):
         return updated_todo
     
     except ClientError as e:
-        logging.error(f"ClientError updating todo: {e.response['Error']['Message']}")
+        logging.error(f"ClientError updating todo: {e}")
         raise HTTPException(status_code=500, detail="Error updating todo")
     except Exception as e:
         logging.error(f"Error updating todo: {e}")
