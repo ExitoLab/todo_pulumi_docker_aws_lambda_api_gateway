@@ -73,10 +73,7 @@ class UpdateTodoRequest(BaseModel):
 
 # PATCH endpoint to update a todo item
 @app.patch("/todos/{id}", response_model=TodoItem)
-async def update_todo(id: str, request: UpdateTodoRequest, timestamp: int = None):
-    # Use the current timestamp if one is not provided
-    timestamp = timestamp or int(time.time())
-
+async def update_todo(id: str, request: UpdateTodoRequest):
     # Initialize the list of update expressions and expression attributes
     update_expressions = []
     expression_attribute_names = {}
@@ -100,9 +97,14 @@ async def update_todo(id: str, request: UpdateTodoRequest, timestamp: int = None
     update_expression = "SET " + ", ".join(update_expressions)
 
     try:
+        # First, check if the item exists
+        response = table.get_item(Key={"id": id})
+        if "Item" not in response:
+            raise HTTPException(status_code=404, detail="Todo not found")
+
         # Update the item in the DynamoDB table
         response = table.update_item(
-            Key={"id": id, "timestamp": timestamp},  # Use `id` and `timestamp` to identify the item
+            Key={"id": id},  # Only using `id` as the partition key
             UpdateExpression=update_expression,
             ExpressionAttributeNames=expression_attribute_names,
             ExpressionAttributeValues=expression_attribute_values,
@@ -110,9 +112,6 @@ async def update_todo(id: str, request: UpdateTodoRequest, timestamp: int = None
         )
 
         updated_todo = response.get("Attributes")
-        if not updated_todo:
-            raise HTTPException(status_code=404, detail="Todo not found")
-
         logging.debug(f"Updated item: {updated_todo}")
         return updated_todo
 
@@ -126,30 +125,27 @@ async def update_todo(id: str, request: UpdateTodoRequest, timestamp: int = None
 
 # Delete a todo item in the DynamoDB table (using only `id` as the partition key)
 @app.delete("/todos/{id}", status_code=204)
-async def delete_todo(id: str, timestamp: int = None):
+async def delete_todo(id: str):
     try:
-        # If timestamp is not provided, use the current timestamp
-        timestamp = timestamp or int(time.time())
+        # Attempt to delete the item using the partition key (id)
+        response = table.delete_item(Key={"id": id})
 
-        # Attempt to delete the item using both the partition key (id) and sort key (timestamp)
-        response = table.delete_item(Key={"id": id, "timestamp": timestamp})
-        
-        # Check if the HTTP status code indicates a successful deletion
-        if "ResponseMetadata" not in response or response["ResponseMetadata"].get("HTTPStatusCode") != 200:
-            logging.warning(f"Delete operation failed for id {id} and timestamp {timestamp}: {response}")
+        # If no item was deleted (i.e., no such key exists), return a 404 error
+        if not response.get("Attributes"):
             raise HTTPException(status_code=404, detail="Todo not found")
         
-        logging.debug(f"Deleted item with id: {id} and timestamp: {timestamp}")
-        # Return nothing (status code 204)
+        logging.debug(f"Deleted item with id: {id}")
+        # Return nothing (status code 204) to indicate successful deletion
         return {"detail": "Todo deleted successfully"}
 
     except ClientError as e:
-        logging.error(f"ClientError deleting todo with id {id} and timestamp {timestamp}: {e}")
+        logging.error(f"ClientError deleting todo with id {id}: {e}")
         raise HTTPException(status_code=500, detail=f"Error deleting todo: {str(e)}")
 
     except Exception as e:
-        logging.error(f"Unexpected error deleting todo with id {id} and timestamp {timestamp}: {e}")
+        logging.error(f"Unexpected error deleting todo with id {id}: {e}")
         raise HTTPException(status_code=500, detail="Error deleting todo")
+
 
 
 @app.get("/health")

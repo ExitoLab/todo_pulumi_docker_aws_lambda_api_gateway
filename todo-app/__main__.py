@@ -14,23 +14,18 @@ region = config.get("region")
 
 aws.config.region = region
 
-# First, create the DynamoDB table
+# First, create the DynamoDB table with just `id` as the primary key
 dynamodb_table = aws.dynamodb.Table(
     f"todo-{environment}",
     name=f"todo-{environment}",
-    hash_key="id",
-    range_key="timestamp",
+    hash_key="id",  # Only `id` as the partition key
     attributes=[
         aws.dynamodb.TableAttributeArgs(
             name="id",
-            type="S"
-        ),
-        aws.dynamodb.TableAttributeArgs(
-            name="timestamp",
-            type="N"
+            type="S"  # `S` for string type (use appropriate type for `id`)
         ),
     ],
-    billing_mode="PAY_PER_REQUEST",
+    billing_mode="PAY_PER_REQUEST",  # On-demand billing mode
     tags={
         "Environment": environment,
         "Created_By": "Pulumi"
