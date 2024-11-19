@@ -127,15 +127,15 @@ async def update_todo(id: str, request: UpdateTodoRequest):
 @app.delete("/todos/{id}", status_code=204)
 async def delete_todo(id: str):
     try:
-        # Attempt to delete the item using the partition key (id)
-        response = table.delete_item(Key={"id": id})
-
-        # If no item was deleted (i.e., no such key exists), return a 404 error
-        if not response.get("Attributes"):
+        # Attempt to delete the item using only the partition key (`id`)
+        response = table.delete_item(Key={"id": id})  # Using only `id` to identify the item
+        
+        # Check if the HTTP status code indicates a successful deletion
+        if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
+            logging.warning(f"Delete operation failed for id {id}: {response}")
             raise HTTPException(status_code=404, detail="Todo not found")
         
         logging.debug(f"Deleted item with id: {id}")
-        # Return nothing (status code 204) to indicate successful deletion
         return {"detail": "Todo deleted successfully"}
 
     except ClientError as e:
@@ -145,7 +145,6 @@ async def delete_todo(id: str):
     except Exception as e:
         logging.error(f"Unexpected error deleting todo with id {id}: {e}")
         raise HTTPException(status_code=500, detail="Error deleting todo")
-
 
 
 @app.get("/health")
