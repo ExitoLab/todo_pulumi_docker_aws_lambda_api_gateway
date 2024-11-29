@@ -19,3 +19,4 @@ To get started, ensure you have the following installed:
 - **AWS CLI**: [Install AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - **Python 3.7+**: [Download Python](https://www.python.org/downloads/)
 - **GitHub Actions**: Ensure you have set up GitHub Actions for your repository.
+
