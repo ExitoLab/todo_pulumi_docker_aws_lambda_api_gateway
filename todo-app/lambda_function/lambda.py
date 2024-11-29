@@ -129,12 +129,12 @@ async def delete_todo(id: str):
     try:
         # Attempt to delete the item using only the partition key (`id`)
         response = table.delete_item(Key={"id": id})  # Using only `id` to identify the item
-        
+
         # Check if the HTTP status code indicates a successful deletion
         if response.get("ResponseMetadata", {}).get("HTTPStatusCode") != 200:
             logging.warning(f"Delete operation failed for id {id}: {response}")
             raise HTTPException(status_code=404, detail="Todo not found")
-        
+
         logging.debug(f"Deleted item with id: {id}")
         return {"detail": "Todo deleted successfully"}
 
@@ -149,8 +149,8 @@ async def delete_todo(id: str):
 @app.get("/health")
 async def health():
     try:
-        logging.debug("Health check initiated")
-        return {"message": "Everything looks good!"}
+        logging.debug("Welcoome,Health check initiated")
+        return {"message": "Welcoome,Everything looks good!"}
     except Exception as e:
         logging.error(f"Health check error: {e}")
         raise HTTPException(status_code=500, detail="Error performing health check")
