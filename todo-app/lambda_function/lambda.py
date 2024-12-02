@@ -149,8 +149,8 @@ async def delete_todo(id: str):
 @app.get("/health")
 async def health():
     try:
-        logging.debug("Welcoome,Health check initiated")
-        return {"message": "Welcoome,Everything looks good!"}
+        logging.debug("Health check initiated")
+        return {"message": "Everything looks good!"}
     except Exception as e:
         logging.error(f"Health check error: {e}")
         raise HTTPException(status_code=500, detail="Error performing health check")
