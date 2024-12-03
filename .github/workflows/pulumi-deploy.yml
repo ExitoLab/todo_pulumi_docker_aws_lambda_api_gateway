@@ -55,10 +55,10 @@ jobs:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
 
-      # # Comment this block, if you don't want to destroy the infra
-      # - name: Pulumi Destroy
-      #   working-directory: todo-app
-      #   run: |
-      #     pulumi destroy --stack ExitoLab/todo-app/dev --yes
-      #   env:
-      #     PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      # Comment this block, if you don't want to destroy the infra
+      - name: Pulumi Destroy
+        working-directory: todo-app
+        run: |
+          pulumi destroy --stack ExitoLab/todo-app/dev --yes
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
