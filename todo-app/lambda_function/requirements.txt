@@ -2,4 +2,3 @@ fastapi
 mangum
 pydantic
 boto3
-
