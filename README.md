@@ -1,6 +1,6 @@
-Building and Deploying a Serverless Todo App on AWS with Docker, Lambda, API Gateway, and GitHub Actions using Pulumi in Python
+# Build a Serverless Todo App With AWS, Pulumi and Python
 
-## Overview
+### Overview
 
 This project demonstrates how to build and deploy a serverless Todo application on AWS using Docker, AWS Lambda, API Gateway, and GitHub Actions. We use Pulumi, an Infrastructure as Code (IaC) tool, to automate the provisioning and deployment of AWS resources in Python.
 
