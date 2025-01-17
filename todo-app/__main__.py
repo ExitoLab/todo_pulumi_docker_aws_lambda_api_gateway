@@ -143,5 +143,3 @@ api_invoke_url = pulumi.Output.concat(
 )
 
 pulumi.export("api_invoke_url", api_invoke_url)
-
-# #How does Pulumi stores statesfile
